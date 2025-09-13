@@ -57,3 +57,8 @@ COPY --from=builder /mistralrs/chat_templates /chat_templates
 
 ENV HUGGINGFACE_HUB_CACHE=/data \
     PORT=80
+
+
+CMD ["./mistralrs-server", "--port", "8001", "-i", "vision-plain", "-m", "mistralai/Mistral-7B-Instruct-v0.3", "-a", "llama4", "--from-uqff", "llama4-scout-instruct-q4k-0.uqff;llama4-scout-instruct-q4k-1.uqff;llama4-scout-instruct-q4k-2.uqff;llama4-scout-instruct-q4k-3.uqff;llama4-scout-instruct-q4k-4.uqff;llama4-scout-instruct-q4k-5.uqff;llama4-scout-instruct-q4k-6.uqff"]
+
+
