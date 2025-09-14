@@ -1,39 +1,68 @@
 # syntax=docker/dockerfile:1
 
-# Stage 1: Build environment
-FROM rust:latest AS builder
+# ================================
+# Stage 1: Build environment (Rust + Python 3.11)
+# ================================
+FROM python:3.11-slim-bookworm AS builder
 
-# Set working directory and copy files
+# Install Rust + build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
+    && . "$HOME/.cargo/env"
+
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# Set working directory and copy repo
 WORKDIR /mistralrs
 COPY . .
 
-# Build the project in release mode, excluding the specified workspace
-RUN cargo build --release --workspace --exclude mistralrs-pyo3
+# Build only mistralrs-pyo3 (faster than whole workspace)
+RUN cargo build --release -p mistralrs-pyo3
+
+# Build Python wheel using maturin (Python 3.11)
+WORKDIR /mistralrs/mistralrs-pyo3
+RUN pip install maturin \
+    && maturin build --release --interpreter python3.11
 
 
-# Stage 2: Minimal runtime environment
-FROM debian:bookworm-slim AS runtime
+# ================================
+# Stage 2: Runtime (Python 3.11)
+# ================================
+FROM python:3.11-slim-bookworm AS runtime
 SHELL ["/bin/bash", "-e", "-o", "pipefail", "-c"]
 
-# Install only essential runtime dependencies and clean up
 ARG DEBIAN_FRONTEND=noninteractive
-RUN <<HEREDOC
-    apt-get update
-    apt-get install -y --no-install-recommends \
-        libomp-dev \
-        ca-certificates \
-        libssl-dev \
-        curl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libomp-dev \
+    ca-certificates \
+    libssl-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-    rm -rf /var/lib/apt/lists/*
-HEREDOC
+# Install Python dependencies
+RUN pip install runpod
 
-# Copy the built binaries from the builder stage
-COPY --chmod=755 --from=builder /mistralrs/target/release/mistralrs-bench /usr/local/bin/
-COPY --chmod=755 --from=builder /mistralrs/target/release/mistralrs-server /usr/local/bin/
-COPY --chmod=755 --from=builder /mistralrs/target/release/mistralrs-web-chat /usr/local/bin/
-# Copy chat templates for users running models which may not include them
+# Copy mistralrs-pyo3 Python wheel from builder
+COPY --from=builder /mistralrs/target/wheels/*.whl /tmp/
+RUN pip install /tmp/*.whl
+
+# Copy chat templates (still useful for some models)
 COPY --from=builder /mistralrs/chat_templates /chat_templates
 
-ENV HUGGINGFACE_HUB_CACHE=/data \
-    PORT=80
+# Copy your Python handler
+WORKDIR /app
+COPY test_handler.py /app/handler.py
+
+# HuggingFace cache (persist between runs if mounted)
+ENV HUGGINGFACE_HUB_CACHE=/workspace/hf_cache \
+    PYTHONUNBUFFERED=1
+
+# Run RunPod handler
+CMD ["python", "handler.py"]
