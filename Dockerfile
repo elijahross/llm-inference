@@ -61,7 +61,7 @@ WORKDIR /app
 COPY handler.py /app/handler.py
 
 # HuggingFace cache (persist between runs if mounted)
-ENV HUGGINGFACE_HUB_CACHE=/workspace/hf_cache \
+ENV HUGGINGFACE_HUB_CACHE=/runpod-volume/hf_cache \
     PYTHONUNBUFFERED=1
 
 # Run RunPod handler
