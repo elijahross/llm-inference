@@ -58,7 +58,7 @@ COPY --from=builder /mistralrs/chat_templates /chat_templates
 
 # Copy your Python handler
 WORKDIR /app
-COPY test_handler.py /app/handler.py
+COPY handler.py /app/handler.py
 
 # HuggingFace cache (persist between runs if mounted)
 ENV HUGGINGFACE_HUB_CACHE=/workspace/hf_cache \
