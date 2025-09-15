@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 # ================================
 # Stage 1: Builder (optional, caches Rust deps)
 # ================================
@@ -13,8 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 python3.11-venv python3.11-dev python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Rust
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+# Install Rust (nightly)
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
+    && . "$HOME/.cargo/env" \
+    && rustup install nightly \
+    && rustup default nightly
 ENV PATH="/root/.cargo/bin:$PATH"
 
 WORKDIR /mistralrs
@@ -24,8 +25,7 @@ ARG RAYON_NUM_THREADS=4
 ARG RUST_NUM_THREADS=4
 ARG RUSTFLAGS="-Z threads=${RUST_NUM_THREADS}"
 ARG WITH_FEATURES="cuda,cudnn"
-# Precompile Rust extension to cache deps
-RUN cargo build --release -p mistralrs-pyo3
+RUN cargo build --release -p mistralrs-pyo3 --features "${WITH_FEATURES}"
 
 
 # ================================
@@ -44,8 +44,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
     && update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
-# Install Rust (needed for maturin develop)
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+# Install Rust (nightly) for maturin
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
+    && . "$HOME/.cargo/env" \
+    && rustup install nightly \
+    && rustup default nightly
 ENV PATH="/root/.cargo/bin:$PATH"
 
 # Install runtime Python dependencies
@@ -61,19 +64,6 @@ RUN maturin build --release --skip-auditwheel --features cuda
 
 WORKDIR /mistralrs
 RUN pip install --no-cache-dir target/wheels/mistralrs-*.whl
+
 # Copy chat templates
-COPY --from=builder /mistralrs/chat_templates /chat_templates
-
-# Copy Python handler
-WORKDIR /app
-COPY handler.py /app/handler.py
-
-# HuggingFace cache
-ENV HUGGINGFACE_HUB_CACHE=/runpod-volume/hf_cache \
-    PYTHONUNBUFFERED=1
-
-# Ensure NVIDIA runtime visibility
-ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-
-CMD ["python", "handler.py"]
+COPY --from=builder /mistralrs/chat_templates /chat
