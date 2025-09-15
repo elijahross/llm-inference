@@ -1,0 +1,31 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "mistralrs"
+version = "0.6.0"
+description = "MistralRS Python bindings with CUDA support"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[tool.maturin]
+# The name of your Python extension package (matches Rust crate with `pyo3` or `rust-cpython`)
+bindings = "pyo3"
+
+# Build in release mode
+release = true
+
+# Tell maturin which Python versions you want to support
+# This avoids needing --interpreter in Dockerfile
+compatibility = "linux"     # no manylinux enforcement since you're in CUDA image
+python-source = "python"    # (optional) if you have Python code to ship alongside
+strip = true
+
+# If your Rust crate links against CUDA
+# You can set environment variables to help maturin find CUDA libs
+# This is optional if the CUDA toolkit is in /usr/local/cuda
+features = ["cuda"]
+
+# Pass extra args to cargo
+cargo-extra-args = "--features cuda"
