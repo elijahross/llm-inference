@@ -43,8 +43,9 @@ RUN cargo build --release --workspace --features "${WITH_FEATURES}"
 
 # Build only mistralrs-pyo3
 WORKDIR /mistralrs/mistralrs-pyo3
-RUN pip3 install --no-cache-dir maturin \
-    && maturin build --release --interpreter python3.11
+RUN pip3 install --no-cache-dir maturin==1.8.1 \
+    && maturin build --release --interpreter python3.11 -o /wheels \
+    && ls -lh /wheels
 
 # ================================
 # Stage 2: Runtime environment (CUDA + Python 3.11)
@@ -72,7 +73,7 @@ HEREDOC
 RUN pip3 install --no-cache-dir runpod
 
 # Copy mistralrs-pyo3 Python wheel from builder
-COPY --from=builder /mistralrs/target/wheels/*.whl /tmp/
+COPY --from=builder /wheels/*.whl /tmp/
 RUN pip3 install /tmp/*.whl
 
 # Copy chat templates
