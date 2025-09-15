@@ -11,25 +11,28 @@ runner = Runner(
 )
 
 def handler(job):
-    job_input = job["input"]
+    try:
+        job_input = job["input"]
 
-    # Build ChatCompletionRequest
-    req = ChatCompletionRequest(
-        model="default",
-        messages=job_input["messages"],  # Expect same structure as OpenAI-style API
-        max_tokens=job_input.get("max_tokens", 120256),
-        presence_penalty=job_input.get("presence_penalty", 0.0),
-        top_p=job_input.get("top_p", 1.0),
-        temperature=job_input.get("temperature", 1.0),
-    )
+        # Build ChatCompletionRequest
+        req = ChatCompletionRequest(
+            model="default",
+            messages=job_input["messages"],
+            max_tokens=job_input.get("max_tokens", 12096),  # safer default
+            presence_penalty=job_input.get("presence_penalty", 0.0),
+            top_p=job_input.get("top_p", 1.0),
+            temperature=job_input.get("temperature", 1.0),
+        )
 
-    # Run inference
-    res = runner.send_chat_completion_request(req)
+        # Run inference
+        res = runner.send_chat_completion_request(req)
 
-    return {
-        "output": res.choices[0].message.content,
-        "usage": res.usage.__dict__,  # Token usage info
-    }
+        return {
+            "output": res.choices[0].message.content
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
 
 # Required by RunPod
 runpod.serverless.start({"handler": handler})
