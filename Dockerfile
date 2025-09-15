@@ -1,87 +1,66 @@
 # syntax=docker/dockerfile:1
 
 # ================================
-# Stage 1: Build environment (CUDA + Rust + Python 3.11)
+# Stage 1: Builder (optional, caches Rust deps)
 # ================================
 FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS builder
-SHELL ["/bin/bash", "-e", "-o", "pipefail", "-c"]
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies
-RUN <<HEREDOC
-    apt-get update
-    apt-get install -y --no-install-recommends \
-        curl \
-        build-essential \
-        pkg-config \
-        libssl-dev \
-        python3.11 \
-        python3-pip \
-        python3-venv \
-        git \
-        ca-certificates \
-        libomp-dev
-    rm -rf /var/lib/apt/lists/*
-HEREDOC
+# Install Rust + build tools + Python for caching
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl build-essential pkg-config libssl-dev git \
+    python3.11 python3.11-venv python3.11-dev python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Rust
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-RUN rustup update nightly && rustup default nightly
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:$PATH"
 
-# Set working directory and copy repo
 WORKDIR /mistralrs
 COPY . .
-
-# Compile mistralrs with CUDA
 ARG CUDA_COMPUTE_CAP=80
 ARG RAYON_NUM_THREADS=4
 ARG RUST_NUM_THREADS=4
 ARG RUSTFLAGS="-Z threads=${RUST_NUM_THREADS}"
 ARG WITH_FEATURES="cuda,cudnn"
-RUN cargo build --release --workspace --features "${WITH_FEATURES}"
+# Precompile Rust extension to cache deps
+RUN cargo build --release -p mistralrs-pyo3
+
 
 # ================================
-# Stage 2: Runtime environment (CUDA + Python 3.11 + Rust)
+# Stage 2: Runtime (Python + CUDA 12.4 + cuDNN + Rust toolchain)
 # ================================
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS runtime
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS runtime
 SHELL ["/bin/bash", "-e", "-o", "pipefail", "-c"]
 
 ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 python3.11-venv python3.11-dev python3-pip \
+    libomp-dev ca-certificates libssl-dev curl build-essential git pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install runtime dependencies
-RUN <<HEREDOC
-    apt-get update
-    apt-get install -y --no-install-recommends \
-        libomp-dev \
-        ca-certificates \
-        libssl-dev \
-        python3.11 \
-        python3-pip \
-        curl \
-        git \
-        build-essential \
-        pkg-config
-    rm -rf /var/lib/apt/lists/*
-HEREDOC
+# Ensure python3.11 is default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
+    && update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
 # Install Rust (needed for maturin develop)
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-RUN rustup update nightly && rustup default nightly
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:$PATH"
 
-# Install Python deps
-RUN pip3 install --no-cache-dir runpod maturin
+# Install runtime Python dependencies
+RUN pip install --no-cache-dir runpod maturin
 
-# Copy source repo from builder
+# Copy source code
 WORKDIR /mistralrs
-COPY . .
+COPY --from=builder /mistralrs /mistralrs
 
-# Build and install mistralrs-pyo3 directly in-place
+# Build Rust Python extension directly in runtime
 WORKDIR /mistralrs/mistralrs-pyo3
-RUN maturin develop --release --interpreter python3.11
+RUN maturin build --release --skip-auditwheel --features cuda
 
+WORKDIR /mistralrs
+RUN pip install --no-cache-dir target/wheels/mistralrs-*.whl
 # Copy chat templates
 COPY --from=builder /mistralrs/chat_templates /chat_templates
 
@@ -89,13 +68,12 @@ COPY --from=builder /mistralrs/chat_templates /chat_templates
 WORKDIR /app
 COPY handler.py /app/handler.py
 
-# Set HuggingFace cache
+# HuggingFace cache
 ENV HUGGINGFACE_HUB_CACHE=/runpod-volume/hf_cache \
-    TRANSFORMERS_CACHE=/runpod-volume/hf_cache \
     PYTHONUNBUFFERED=1
 
-# Optional symlink
-RUN ln -s /runpod-volume /workspace || true
+# Ensure NVIDIA runtime visibility
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-# Run RunPod handler
-CMD ["python3", "handler.py"]
+CMD ["python", "handler.py"]
