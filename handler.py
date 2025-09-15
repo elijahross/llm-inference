@@ -6,7 +6,15 @@ runner = Runner(
     which=Which.VisionPlain(
         model_id="EricB/Llama-4-Scout-17B-16E-Instruct-UQFF",
         arch=VisionArchitecture.Llama4,
-        from_uqff="llama4-scout-instruct-q4k-0.uqff;llama4-scout-instruct-q4k-1.uqff;llama4-scout-instruct-q4k-2.uqff;llama4-scout-instruct-q4k-3.uqff;llama4-scout-instruct-q4k-4.uqff;llama4-scout-instruct-q4k-5.uqff;llama4-scout-instruct-q4k-6.uqff",
+        from_uqff=[
+        "llama4-scout-instruct-q4k-0.uqff",
+        "llama4-scout-instruct-q4k-1.uqff",
+        "llama4-scout-instruct-q4k-2.uqff",
+        "llama4-scout-instruct-q4k-3.uqff",
+        "llama4-scout-instruct-q4k-4.uqff",
+        "llama4-scout-instruct-q4k-5.uqff",
+        "llama4-scout-instruct-q4k-6.uqff",
+    ],
     ),
 )
 
