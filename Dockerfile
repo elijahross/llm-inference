@@ -43,8 +43,8 @@ RUN cargo build --release --workspace --features "${WITH_FEATURES}"
 
 # Build only mistralrs-pyo3
 WORKDIR /mistralrs/mistralrs-pyo3
-RUN pip3 install --no-cache-dir maturin==1.8.1 \
-    && maturin build --release --interpreter python3.11 -o /wheels \
+RUN pip3 install --no-cache-dir maturin \
+    && maturin build --release --interpreter python3.11 --skip-auditwheel -o /wheels \
     && ls -lh /wheels
 
 # ================================
