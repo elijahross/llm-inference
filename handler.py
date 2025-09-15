@@ -5,7 +5,8 @@ from mistralrs import Runner, Which, ChatCompletionRequest, VisionArchitecture
 runner = Runner(
     which=Which.VisionPlain(
         model_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
-        quantized_filename="llama4-scout-instruct-q4k-0.uqff;llama4-scout-instruct-q4k-1.uqff;llama4-scout-instruct-q4k-2.uqff;llama4-scout-instruct-q4k-3.uqff;llama4-scout-instruct-q4k-4.uqff;llama4-scout-instruct-q4k-5.uqff;llama4-scout-instruct-q4k-6.uqff",
+        arch=VisionArchitecture.Llama4,
+        from_uqff="llama4-scout-instruct-q4k-0.uqff;llama4-scout-instruct-q4k-1.uqff;llama4-scout-instruct-q4k-2.uqff;llama4-scout-instruct-q4k-3.uqff;llama4-scout-instruct-q4k-4.uqff;llama4-scout-instruct-q4k-5.uqff;llama4-scout-instruct-q4k-6.uqff",
     ),
 )
 
