@@ -16,8 +16,9 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
     && update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
 # Install Python deps (use prebuilt CUDA wheel for mistralrs)
-RUN pip install --no-cache-dir runpod mistralrs-cuda -v
-
+RUN python -m pip install --upgrade pip \
+    && python -m pip install --no-cache-dir runpod mistralrs-cuda -v
+    
 # Copy chat templates (optional if mistralrs-cuda already ships them)
 WORKDIR /chat_templates
 COPY chat_templates /chat_templates
