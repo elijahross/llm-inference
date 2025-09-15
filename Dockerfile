@@ -1,69 +1,37 @@
-# ================================
-# Stage 1: Builder (optional, caches Rust deps)
-# ================================
-FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS builder
+# syntax=docker/dockerfile:1
 
-ARG DEBIAN_FRONTEND=noninteractive
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
 
-# Install Rust + build tools + Python for caching
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl build-essential pkg-config libssl-dev git \
-    python3.11 python3.11-venv python3.11-dev python3-pip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Rust (nightly)
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
-    && . "$HOME/.cargo/env" \
-    && rustup install nightly \
-    && rustup default nightly
-ENV PATH="/root/.cargo/bin:$PATH"
-
-WORKDIR /mistralrs
-COPY . .
-ARG CUDA_COMPUTE_CAP=80
-ARG RAYON_NUM_THREADS=4
-ARG RUST_NUM_THREADS=4
-ARG RUSTFLAGS="-Z threads=${RUST_NUM_THREADS}"
-ARG WITH_FEATURES="cuda,cudnn"
-RUN cargo build --release -p mistralrs-pyo3 --features "${WITH_FEATURES}"
-
-
-# ================================
-# Stage 2: Runtime (Python + CUDA 12.4 + cuDNN + Rust toolchain)
-# ================================
-FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS runtime
 SHELL ["/bin/bash", "-e", "-o", "pipefail", "-c"]
-
 ARG DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.11 python3.11-venv python3.11-dev python3-pip \
-    libomp-dev ca-certificates libssl-dev curl build-essential git pkg-config \
+    python3.11 python3.11-dev python3.11-venv python3-pip \
+    libomp-dev ca-certificates libssl-dev curl git \
     && rm -rf /var/lib/apt/lists/*
 
 # Ensure python3.11 is default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
     && update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
-# Install Rust (nightly) for maturin
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \
-    && . "$HOME/.cargo/env" \
-    && rustup install nightly \
-    && rustup default nightly
-ENV PATH="/root/.cargo/bin:$PATH"
+# Install Python deps (use prebuilt CUDA wheel for mistralrs)
+RUN pip install --no-cache-dir runpod mistralrs-cuda -v
 
-# Install runtime Python dependencies
-RUN pip install --no-cache-dir runpod maturin
+# Copy chat templates (optional if mistralrs-cuda already ships them)
+WORKDIR /chat_templates
+COPY chat_templates /chat_templates
 
-# Copy source code
-WORKDIR /mistralrs
-COPY --from=builder /mistralrs /mistralrs
+# Copy Python handler
+WORKDIR /app
+COPY handler.py /app/handler.py
 
-# Build Rust Python extension directly in runtime
-WORKDIR /mistralrs/mistralrs-pyo3
-RUN maturin build --release --skip-auditwheel --features cuda
+# HuggingFace cache
+ENV HUGGINGFACE_HUB_CACHE=/runpod-volume/hf_cache \
+    PYTHONUNBUFFERED=1
 
-WORKDIR /mistralrs
-RUN pip install --no-cache-dir target/wheels/mistralrs-*.whl
+# Ensure NVIDIA runtime visibility
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-# Copy chat templates
-COPY --from=builder /mistralrs/chat_templates /chat
+CMD ["python", "handler.py"]
