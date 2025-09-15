@@ -72,8 +72,8 @@ HEREDOC
 RUN pip3 install --no-cache-dir runpod
 
 # Copy mistralrs-pyo3 Python wheel from builder
-COPY --from=builder /mistralrs/mistralrs-pyo3/target/wheels/*.whl /tmp/
-RUN pip3 install --no-cache-dir /tmp/*.whl
+COPY --from=builder /mistralrs/target/wheels/*.whl /tmp/
+RUN pip3 install /tmp/*.whl
 
 # Copy chat templates
 COPY --from=builder /mistralrs/chat_templates /chat_templates
