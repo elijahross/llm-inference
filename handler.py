@@ -4,18 +4,10 @@ from mistralrs import Runner, Which, ChatCompletionRequest, VisionArchitecture
 # You can initialize the runner once, so it’s cached in memory if the pod stays warm.
 runner = Runner(
     which=Which.VisionPlain(
-        model_id="EricB/Llama-4-Scout-17B-16E-Instruct-UQFF",
+        model_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
         arch=VisionArchitecture.Llama4,
-        from_uqff=[
-        "llama4-scout-instruct-q4k-0.uqff",
-        "llama4-scout-instruct-q4k-1.uqff",
-        "llama4-scout-instruct-q4k-2.uqff",
-        "llama4-scout-instruct-q4k-3.uqff",
-        "llama4-scout-instruct-q4k-4.uqff",
-        "llama4-scout-instruct-q4k-5.uqff",
-        "llama4-scout-instruct-q4k-6.uqff",
-    ],
     ),
+    in_situ_quant="Q4K",
 )
 
 def handler(job):

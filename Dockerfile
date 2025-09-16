@@ -29,7 +29,12 @@ WORKDIR /app
 COPY handler.py /app/handler.py
 
 # HuggingFace cache
-ENV HUGGINGFACE_HUB_CACHE=/runpod-volume/hf_cache \
+ENV HF_HOME=/runpod-volume/hf_cache \
+    HUGGINGFACE_HUB_CACHE=/runpod-volume/hf_cache/hub \
+    TRANSFORMERS_CACHE=/runpod-volume/hf_cache/transformers \
+    HF_DATASETS_CACHE=/runpod-volume/hf_cache/datasets \
+    HF_MODULES_CACHE=/runpod-volume/hf_cache/modules \
+    HF_ASSETS_CACHE=/runpod-volume/hf_cache/assets \
     PYTHONUNBUFFERED=1
 
 # Ensure NVIDIA runtime visibility
