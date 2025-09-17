@@ -33,8 +33,8 @@ def handler(job):
         res = runner.send_chat_completion_request(req)
 
         return {
-            "output": res,
-            "response": res.choices[0].message.content
+            "usage": res.usage,
+            "output": res.choices[0].message.content
         }
 
     except Exception as e:
