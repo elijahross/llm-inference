@@ -1,13 +1,13 @@
 import runpod
-from mistralrs import Runner, Which, ChatCompletionRequest, VisionArchitecture
+from mistralrs import Runner, Which, ChatCompletionRequest, Architecture
 import os
 
 # You can initialize the runner once, so it’s cached in memory if the pod stays warm.
 runner = Runner(
-    which=Which.VisionPlain(
-        model_id="EricB/Llama-4-Scout-17B-16E-Instruct-UQFF",
-        from_uqff=["/runpod-volume/models/llama4-scout-instruct-q4k-0.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-1.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-2.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-3.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-4.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-5.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-6.uqff"],
-        arch=VisionArchitecture.Llama4,
+    which=Which.Plain(
+        model_id="EricB/Qwen3-32B-UQFF",
+        from_uqff=["/runpod-volume/models/qwen332b-q4k-0.uqff", "/runpod-volume/models/qwen332b-q4k-1.uqff"],
+        arch=Architecture.Qwen3,
         hf_cache_path="/runpod-volume/hf_cache"
     ),
 )
