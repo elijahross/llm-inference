@@ -10,6 +10,9 @@ runner = Runner(
         arch=VisionArchitecture.Llama4,
         hf_cache_path="/runpod-volume/hf_cache"
     ),
+    max_seq_len=12192,
+    max_batch_size=1,
+    max_num_images=4
 )
 
 def handler(job):
