@@ -6,5 +6,5 @@
 .idea
 mistral.rs/
 mistralrs-web-chat/cache
-testing.py
-starting.py
+/testing.py
+/starting.py
