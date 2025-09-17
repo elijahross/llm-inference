@@ -29,8 +29,8 @@ WORKDIR /chat_templates
 COPY chat_templates /chat_templates
 
 # Copy Python handler
-WORKDIR /app
-COPY handler.py /app/handler.py
+WORKDIR /
+COPY handler.py /handler.py
 
 # HuggingFace cache
 ENV HF_HOME=/runpod-volume/hf_cache \

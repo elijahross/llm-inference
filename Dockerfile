@@ -29,8 +29,8 @@ WORKDIR /chat_templates
 COPY chat_templates /chat_templates
 
 # Copy Python handler
-WORKDIR /app
-COPY handler.py /app/handler.py
+WORKDIR /
+COPY handler.py /handler.py
 
 # HuggingFace cache
 ENV HF_HOME=/runpod-volume/hf_cache \
@@ -44,6 +44,5 @@ ENV HF_HOME=/runpod-volume/hf_cache \
 # Ensure NVIDIA runtime visibility
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-WORKDIR /
 
-CMD ["python", "/app/handler.py"]
+CMD ["python", "handler.py"]
