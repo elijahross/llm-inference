@@ -1,18 +1,26 @@
 import runpod
 from mistralrs import Runner, Which, ChatCompletionRequest, VisionArchitecture
+import os
 
 # You can initialize the runner once, so it’s cached in memory if the pod stays warm.
 runner = Runner(
     which=Which.VisionPlain(
-        model_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        model_id="EricB/Llama-4-Scout-17B-16E-Instruct-UQFF",
+        from_uqff=["/runpod-volume/models/llama4-scout-instruct-q4k-0.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-1.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-2.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-3.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-4.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-5.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-6.uqff",],
         arch=VisionArchitecture.Llama4,
+        hf_cache_path="/runpod-volume/hf_cache",
+        max_seq_len=12192,
+        max_batch_size=1,
+        max_num_images=4,
     ),
-    in_situ_quant="Q4K",
 )
 
 def handler(job):
     try:
         job_input = job["input"]
+        hf_token = job.get("token", None)
+        if hf_token:
+            os.environ["HUGGINGFACE_HUB_TOKEN"] = hf_token
 
         # Build ChatCompletionRequest
         req = ChatCompletionRequest(
@@ -28,7 +36,8 @@ def handler(job):
         res = runner.send_chat_completion_request(req)
 
         return {
-            "output": res.choices[0].message.content
+            "output": res,
+            "response": res.choices[0].message.content
         }
 
     except Exception as e:

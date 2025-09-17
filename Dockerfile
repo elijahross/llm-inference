@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1
 
-FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
-
+# Stage 1: Build environment
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS builder
 SHELL ["/bin/bash", "-e", "-o", "pipefail", "-c"]
+
 ARG DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /wheels
+COPY wheels /wheels
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,9 +21,9 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
 
 # Install Python deps (use prebuilt CUDA wheel for mistralrs)
 RUN python -m pip install --upgrade pip \
-    && python -m pip install --no-cache-dir runpod mistralrs-cuda -v mistralrs \
-    && python -m pip show runpod \
-    && python -m pip show mistralrs-cuda
+    && python -m pip install --no-cache-dir runpod /wheels/mistralrs-cp311.whl
+
+
 # Copy chat templates (optional if mistralrs-cuda already ships them)
 WORKDIR /chat_templates
 COPY chat_templates /chat_templates
