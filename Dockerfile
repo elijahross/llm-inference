@@ -44,5 +44,6 @@ ENV HF_HOME=/runpod-volume/hf_cache \
 # Ensure NVIDIA runtime visibility
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+WORKDIR /
 
-CMD ["python", "handler.py"]
+CMD ["python", "/app/handler.py"]
