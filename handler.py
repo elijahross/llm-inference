@@ -5,8 +5,8 @@ import os
 # You can initialize the runner once, so it’s cached in memory if the pod stays warm.
 runner = Runner(
     which=Which.VisionPlain(
-        model_id="EricB/Llama-4-Scout-17B-16E-Instruct-UQFF",
-        from_uqff=["/runpod-volume/models/llama4-scout-instruct-q4k-0.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-1.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-2.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-3.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-4.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-5.uqff", "/runpod-volume/models/llama4-scout-instruct-q4k-6.uqff"],
+        model_id="/runpod-volume/models/llama4-scout",
+        from_uqff=["/runpod-volume/models/llama4-scout/llama4-scout-instruct-q4k-0.uqff", "/runpod-volume/models/llama4-scout/llama4-scout-instruct-q4k-1.uqff", "/runpod-volume/models/llama4-scout/llama4-scout-instruct-q4k-2.uqff", "/runpod-volume/models/llama4-scout/llama4-scout-instruct-q4k-3.uqff", "/runpod-volume/models/llama4-scout/llama4-scout-instruct-q4k-4.uqff", "/runpod-volume/models/llama4-scout/llama4-scout-instruct-q4k-5.uqff", "/runpod-volume/models/llama4-scout/llama4-scout-instruct-q4k-6.uqff"],
         arch=VisionArchitecture.Llama4,
         hf_cache_path="/runpod-volume/hf_cache"
     )

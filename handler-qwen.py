@@ -5,8 +5,8 @@ import os
 # You can initialize the runner once, so it’s cached in memory if the pod stays warm.
 runner = Runner(
     which=Which.Plain(
-        model_id="EricB/Qwen3-32B-UQFF",
-        from_uqff=["/runpod-volume/models/qwen332b-q4k-0.uqff", "/runpod-volume/models/qwen332b-q4k-1.uqff"],
+        model_id="/runpod-volume/models/qwen332b",
+        from_uqff=["/runpod-volume/models/qwen332b/qwen332b-q4k-0.uqff", "/runpod-volume/models/qwen332b/qwen332b-q4k-1.uqff"],
         arch=Architecture.Qwen3,
         hf_cache_path="/runpod-volume/hf_cache"
     ),
