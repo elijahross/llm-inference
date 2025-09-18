@@ -5,19 +5,9 @@ FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS builder
 SHELL ["/bin/bash", "-e", "-o", "pipefail", "-c"]
 
 ARG DEBIAN_FRONTEND=noninteractive
-RUN <<HEREDOC
-    apt-get update
-    apt-get install -y --no-install-recommends \
-        curl \
-        libssl-dev \
-        pkg-config
 
-    rm -rf /var/lib/apt/lists/*
-HEREDOC
-
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-RUN rustup update nightly && rustup default nightly
+WORKDIR /wheels
+COPY wheels /wheels
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -29,18 +19,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
     && update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
-RUN pip install maturin==1.7.0
-
-WORKDIR /
-RUN git clone https://github.com/EricLBuehler/mistral.rs.git /mistral.rs
-WORKDIR /mistral.rs
-
 # Install Python deps (use prebuilt CUDA wheel for mistralrs)
 RUN python -m pip install --upgrade pip \
-    && python -m pip install --no-cache-dir runpod 
+    && python -m pip install --no-cache-dir runpod /wheels/mistralrs-0.6.0-cp311-cp311-manylinux_2_35_x86_64.whl
 
-RUN MISTRAL_CUDA=1 maturin build --release --features="cuda" -m mistralrs-pyo3/Cargo.toml --compatibility=off -o /mistralrs
-RUN pip install /mistralrs/mistralrs-*-cp311-cp311-linux_x86_64.whl
 
 # Copy chat templates (optional if mistralrs-cuda already ships them)
 WORKDIR /chat_templates
