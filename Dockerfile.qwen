@@ -39,7 +39,8 @@ RUN cd /mistral.rs
 RUN python -m pip install --upgrade pip \
     && python -m pip install --no-cache-dir runpod 
 
-RUN MISTRAL_CUDA=1 maturin develop --release --features="cuda" -m mistralrs-pyo3/Cargo.toml
+RUN MISTRAL_CUDA=1 maturin build --release --features="cuda" -m mistralrs-pyo3/Cargo.toml --compatibility=off -o /mistralrs
+RUN pip install /mistralrs/mistralrs-*-cp311-cp311-linux_x86_64.whl
 
 # Copy chat templates (optional if mistralrs-cuda already ships them)
 WORKDIR /chat_templates
