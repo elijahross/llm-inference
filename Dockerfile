@@ -31,9 +31,9 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
 
 RUN pip install maturin==1.7.0
 
-RUN git clone https://github.com/EricLBuehler/mistral.rs.git
-# make sure you're in the repo root
-RUN cd /mistral.rs
+WORKDIR /
+RUN git clone https://github.com/EricLBuehler/mistral.rs.git /mistral.rs
+WORKDIR /mistral.rs
 
 # Install Python deps (use prebuilt CUDA wheel for mistralrs)
 RUN python -m pip install --upgrade pip \
